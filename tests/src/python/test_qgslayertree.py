@@ -30,6 +30,17 @@ app = start_app()
 TEST_DATA_DIR = unitTestDataPath()
 
 
+def getLayers():
+    layer = QgsVectorLayer("Point?field=fldtxt:string",
+                           "layer1", "memory")
+    layer2 = QgsVectorLayer("Point?field=fldtxt:string",
+                            "layer2", "memory")
+    layer3 = QgsVectorLayer("Point?field=fldtxt:string",
+                            "layer3", "memory")
+
+    return [layer, layer2, layer3]
+
+
 class TestQgsLayerTree(unittest.TestCase):
 
     def __init__(self, methodName):
@@ -39,13 +50,7 @@ class TestQgsLayerTree(unittest.TestCase):
     def testCustomLayerOrder(self):
         """ test project layer order"""
         prj = QgsProject()
-        layer = QgsVectorLayer("Point?field=fldtxt:string",
-                               "layer1", "memory")
-        layer2 = QgsVectorLayer("Point?field=fldtxt:string",
-                                "layer2", "memory")
-        layer3 = QgsVectorLayer("Point?field=fldtxt:string",
-                                "layer3", "memory")
-        prj.addMapLayers([layer, layer2, layer3])
+        prj.addMapLayers(getLayers())
 
         layer_order_changed_spy = QSignalSpy(prj.layerTreeRoot().customLayerOrderChanged)
         prj.layerTreeRoot().setCustomLayerOrder([layer2, layer])
@@ -77,6 +82,20 @@ class TestQgsLayerTree(unittest.TestCase):
         # clear project
         prj.clear()
         self.assertEqual(prj.layerTreeRoot().customLayerOrder(), [])
+
+    def testMoveToTopAction(self):
+        """Test move to top action in layer tree"""
+
+        prj = QgsProject()
+        prj.addMapLayers(getLayers())
+        self.assertEqual(prj.layerTreeRoot().customLayerOrder(), [layer, layer2, layer3])
+
+        treeView = app.layerTreeView()
+        actions = treeView.defaultActions()
+        treeView.setCurrentLayer(layer3)
+
+        actions.moveToTop()
+        self.assertEqual(prj.layerTreeRoot().customLayerOrder(), [layer3, layer, layer2])
 
 
 if __name__ == '__main__':
